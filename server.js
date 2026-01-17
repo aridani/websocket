@@ -1,6 +1,6 @@
-const express = require('express');
-const { createServer } = require('http');
-const WebSocket = require('ws');
+const express = require("express");
+const { createServer } = require("http");
+const WebSocket = require("ws");
 
 const app = express();
 const server = createServer(app);
@@ -11,15 +11,15 @@ const wss = new WebSocket.Server({ server });
 // Menyimpan subscriber berdasarkan sesi_id
 let subscribers = {};
 
-wss.on('connection', (ws) => {
-  console.log('Client connected via WebSocket');
+wss.on("connection", (ws) => {
+  console.log("Client connected via WebSocket");
 
-  ws.on('message', (message) => {
+  ws.on("message", (message) => {
     try {
       const data = JSON.parse(message);
 
       // Jika client ingin subscribe sesi_id
-      if (data.action === 'subscribe' && data.sesi_id) {
+      if (data.action === "subscribe" && data.sesi_id) {
         ws.sesi_id = data.sesi_id;
 
         if (!subscribers[data.sesi_id]) {
@@ -28,13 +28,12 @@ wss.on('connection', (ws) => {
         subscribers[data.sesi_id].add(ws);
         console.log(`Client subscribed sesi_id: ${data.sesi_id}`);
       }
-
     } catch (err) {
-      console.error('Invalid message', err);
+      console.error("Invalid message", err);
     }
   });
 
-  ws.on('close', () => {
+  ws.on("close", () => {
     // Hapus ws dari subscribers
     if (ws.sesi_id && subscribers[ws.sesi_id]) {
       subscribers[ws.sesi_id].delete(ws);
@@ -42,20 +41,20 @@ wss.on('connection', (ws) => {
         delete subscribers[ws.sesi_id];
       }
     }
-    console.log('Client disconnected');
+    console.log("Client disconnected");
   });
 });
 
 // === Endpoint untuk menerima data dari ESP32 / PHP ===
 app.use(express.json());
-app.post('/update', (req, res) => {
+app.post("/update", (req, res) => {
   const data = req.body; // expect JSON { sesi_id, tinggi, berat, status, bbi, kalori, tujuan, durasi }
-  console.log("ada data masuk",data.sesi_id)
-  if (!data.sesi_id) return res.status(400).send('sesi_id required');
+  console.log("ada data masuk", data.sesi_id);
+  if (!data.sesi_id) return res.status(400).send("sesi_id required");
 
   const clients = subscribers[data.sesi_id];
   if (clients) {
-    clients.forEach(ws => {
+    clients.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(data));
       }
@@ -66,8 +65,8 @@ app.post('/update', (req, res) => {
 });
 
 // === Test endpoint biasa ===
-app.get('/', (req, res) => {
-  res.send('<h1>Server WebSocket Ready</h1>');
+app.get("/", (req, res) => {
+  res.send("<h1>Server WebSocket Ready</h1>");
 });
 
 // === Listen server ===
