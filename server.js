@@ -47,11 +47,24 @@ wss.on("connection", (ws) => {
 
 // === Endpoint untuk menerima data dari ESP32 / PHP ===
 app.use(express.json());
-app.post("/update", (req, res) => {
+app.post("/default", (req, res) => {
+  const data = req.body;
+  console.log("default data", "default");
+  const clients = subscribers["default"];
+  if (clients) {
+    clients.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(data));
+      }
+    });
+  }
+
+  res.send({ ok: true });
+});
+app.post("/calculation", (req, res) => {
   const data = req.body; // expect JSON { sesi_id, tinggi, berat, status, bbi, kalori, tujuan, durasi }
   console.log("ada data masuk", data.sesi_id);
   if (!data.sesi_id) return res.status(400).send("sesi_id required");
-
   const clients = subscribers[data.sesi_id];
   if (clients) {
     clients.forEach((ws) => {
